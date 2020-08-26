@@ -1,152 +1,163 @@
-import React, { Component } from "react";
-import Form from "react-validation/build/form";
-import Input from "react-validation/build/input";
-import CheckButton from "react-validation/build/button";
-
+import React, {Component, useContext, useEffect, useRef, useState} from "react";
 import AuthService from "../services/auth.service";
+import {AuthContext} from "../context/AuthContext";
+import Card from "@material-ui/core/Card";
+import CardContent from "@material-ui/core/CardContent";
+import Avatar from "@material-ui/core/Avatar";
+import { Alert } from '@material-ui/lab';
 
-const required = value => {
-  if (!value) {
-    return (
-      <div className="alert alert-danger" role="alert">
-        This field is required!
-      </div>
-    );
-  }
-};
+import Button from '@material-ui/core/Button';
+import TextField from '@material-ui/core/TextField';
+import Typography from '@material-ui/core/Typography';
+import { makeStyles } from '@material-ui/core/styles';
 
-export default class Login extends Component {
-  constructor(props) {
-    super(props);
-    this.handleLogin = this.handleLogin.bind(this);
-    this.onChangeUsername = this.onChangeUsername.bind(this);
-    this.onChangePassword = this.onChangePassword.bind(this);
 
-    this.state = {
-      username: "",
-      password: "",
-      loading: false,
-      message: ""
-    };
-  }
 
-  onChangeUsername(e) {
-    this.setState({
-      username: e.target.value
-    });
-  }
+const useStyles = makeStyles((theme) => ({
+  root: {
+    maxWidth: 500
+  },
+  paper: {
+    marginTop: theme.spacing(4),
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: theme.spacing(15),
+    height: theme.spacing(15),
+    margin: 'auto',
+  },
+  form: {
+    width: '100%', // Fix IE 11 issue.
+    marginTop: theme.spacing(1),
+  },
+  submit: {
+    margin: theme.spacing(3, 0, 2),
+  },
+}));
 
-  onChangePassword(e) {
-    this.setState({
-      password: e.target.value
-    });
-  }
+export default function Login (props) {
 
-  handleLogin(e) {
-    e.preventDefault();
+  const classes = useStyles();
+  const authContext = useContext(AuthContext);
 
-    this.setState({
-      message: "",
-      loading: true
-    });
+  const loginHandler = () => {
 
-    this.form.validateAll();
+    setMessage("");
+    if(!username || !password){
+      setMessage("Wypełnij wszystkie pola!");
+      return;
+    }
 
-    if (this.checkBtn.context._errors.length === 0) {
-      AuthService.login(this.state.username, this.state.password).then(
-        () => {
-          this.props.history.push("/profile");
-          window.location.reload();
-        },
-        error => {
-          const resMessage =
-            (error.response &&
-              error.response.data &&
-              error.response.data.message) ||
-            error.message ||
-            error.toString();
-
-          this.setState({
-            loading: false,
-            message: resMessage
-          });
+    AuthService.login(username, password).then(
+      (user) => {
+        authContext.login(user)
+        props.history.push("/profile");
+        // window.location.reload();
+      },
+      error => {
+        let resMessage =
+          (error.response &&
+            error.response.data &&
+            error.response.data.message) ||
+          error.message ||
+          error.toString();
+        switch (resMessage) {
+          case "User Not found!": resMessage="Nie znaleziono użytkownika!"; break;
+          case "Invalid Password!": resMessage="Niepoprawne hasło!"; break;
         }
-      );
-    } else {
-      this.setState({
-        loading: false
-      });
+        setMessage(resMessage);
+      }
+    );
+  };
+
+  const [message, setMessage] = useState("");
+  const [usernameError, setUsernameError] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+
+  const changeUsername = (e) => {
+    const newUsername = e.target.value;
+    setUsername(newUsername);
+    if(newUsername === ""){
+      setUsernameError(true);
+    }
+    else{
+      setUsernameError(false);
+    }
+  }
+  const changePassword = (e) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    if(newPassword === ""){
+      setPasswordError(true);
+    }
+    else{
+      setPasswordError(false);
     }
   }
 
-  render() {
-    return (
-      <div className="col-md-12">
-        <div className="card card-container">
-          <img
-            src="//ssl.gstatic.com/accounts/ui/avatar_2x.png"
-            alt="profile-img"
-            className="profile-img-card"
-          />
+  return (
+    <>
+      <Card className={classes.root} >
+          <CardContent>
+            <Avatar className={classes.avatar}
+                    src={"https://ssl.gstatic.com/accounts/ui/avatar_2x.png"}/>
+            <div className={classes.paper}>
+              <Typography component="h1" variant="h5">
+                Zaloguj się
+              </Typography>
+              <div className={classes.form}>
+                <TextField
+                  variant="outlined"
+                  margin="normal"
+                  required
+                  fullWidth
+                  id="login"
+                  label="Login"
+                  name="login"
+                  autoComplete="username"
+                  autoFocus
+                  onClick={changeUsername}
+                  onInput={changeUsername}
+                  error={usernameError}
+                  helperText={usernameError ? "Nazwa użytkownika nie może być pusta." : ""}
+                />
+                <TextField
+                  variant="outlined"
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="password"
+                  label="Hasło"
+                  type="password"
+                  id="password"
+                  error={passwordError}
+                  autoComplete="current-password"
+                  onClick={changePassword}
+                  onInput={changePassword}
+                  helperText={passwordError ? "Hasło nie może być puste." : ""}
+                />
+                <Button
+                  onClick={loginHandler}
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  className={classes.submit}
+                >
+                  Zaloguj się
+                </Button>
 
-          <Form
-            onSubmit={this.handleLogin}
-            ref={c => {
-              this.form = c;
-            }}
-          >
-            <div className="form-group">
-              <label htmlFor="username">Username</label>
-              <Input
-                type="text"
-                className="form-control"
-                name="username"
-                value={this.state.username}
-                onChange={this.onChangeUsername}
-                validations={[required]}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <Input
-                type="password"
-                className="form-control"
-                name="password"
-                value={this.state.password}
-                onChange={this.onChangePassword}
-                validations={[required]}
-              />
-            </div>
-
-            <div className="form-group">
-              <button
-                className="btn btn-primary btn-block"
-                disabled={this.state.loading}
-              >
-                {this.state.loading && (
-                  <span className="spinner-border spinner-border-sm"></span>
-                )}
-                <span>Login</span>
-              </button>
-            </div>
-
-            {this.state.message && (
-              <div className="form-group">
-                <div className="alert alert-danger" role="alert">
-                  {this.state.message}
-                </div>
+                {message && (<Alert severity="error">{message}</Alert>)}
               </div>
-            )}
-            <CheckButton
-              style={{ display: "none" }}
-              ref={c => {
-                this.checkBtn = c;
-              }}
-            />
-          </Form>
-        </div>
-      </div>
-    );
-  }
+            </div>
+          </CardContent>
+        </Card>
+
+  </>
+    )
 }

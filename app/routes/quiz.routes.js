@@ -13,15 +13,14 @@ module.exports = function(app) {
   app.post(
     "/api/quiz/create",
     [
-      authJwt.verifyToken, 
-      authJwt.isAdmin
+      authJwt.verifyToken
     ],
     controller.createQuiz
   );
 
   app.get(
     "/api/quiz/list",
-    [],
+    [authJwt.verifyToken],
     controller.listQuiz
   );
 

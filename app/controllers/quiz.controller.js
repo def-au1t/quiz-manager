@@ -10,12 +10,26 @@ exports.createQuiz = (req, res) => {
       message: "Could not get user info. Internal server error."})
     return;
   }
-
+  if(!req.body.questions){
+    res.status(400).send({
+      message: "No quiz questions."})
+    return;
+  }
+  if(!req.body.name){
+    res.status(400).send({
+      message: "No quiz name."})
+    return;
+  }
   const questions = req.body.questions;
 
   let newQuestions = [];
   for(let question of questions){
     let answers = [];
+    if(!question.answers){
+      res.status(400).send({
+        message: "No question answers."})
+      return;
+    }
     for(let answer of question.answers){
       if(!answer.text || !(answer.isTrue === true || answer.isTrue === false)) continue;
       answers.push(answer);
@@ -42,7 +56,7 @@ exports.createQuiz = (req, res) => {
 };
 
 exports.listQuiz = (req, res) => {
-  Quiz.find({}).populate('author').exec((err, quizzes) => {
+  Quiz.find({"author": req.userId}).populate('author').exec((err, quizzes) => {
     if(err){
       res.status(500).send({ message: err });
       return;
@@ -71,10 +85,11 @@ exports.getQuiz = (req, res) => {
       res.status(404).send({message: "quiz with given id was not found"});
       return;
     }
-    for (let question of quiz.questions){
+    let quiz_res = quiz.toObject()
+    for (let question of quiz_res.questions){
       question.answers = question.answers.map((answer) => answer.text)
     }
-    res.send(quiz);
+    res.send(quiz_res);
   })
 };
 
@@ -217,7 +232,7 @@ exports.createQuizAttempt = (req, res) => {
   }
   Quiz.findById(req.params.id).exec((err, quiz) => {
     if(err){
-      res.status(500).send({ message: err });
+      res.status(404).send({ message: "quiz with given id was not found" });
       return;
     }
     if (!quiz){

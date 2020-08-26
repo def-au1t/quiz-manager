@@ -1,15 +1,15 @@
 import React, {Component, useEffect, useState} from "react";
 import { BrowserRouter as Router, Redirect, Switch, Route, Link as RouterLink, useHistory} from "react-router-dom";
-// import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
 import AuthService from "./services/auth.service";
+import UserService from "./services/user.service";
 
 import Login from "./components/login.component";
 import Register from "./components/register.component";
 import Home from "./components/home.component";
 import Profile from "./components/profile.component";
-import BoardUser from "./components/board-user.component";
+import BoardUser from "./components/quiz-list.component";
 import BoardAdmin from "./components/board-admin.component";
 import QuizAttempt from "./components/quiz-attempt.component";
 import AppBar from "@material-ui/core/AppBar";
@@ -22,23 +22,18 @@ import makeStyles from "@material-ui/core/styles/makeStyles";
 import {AccountCircle} from "@material-ui/icons";
 import Container from "@material-ui/core/Container";
 import QuizInfo from "./components/quiz-info.component";
+import {AuthContext} from "./context/AuthContext";
+import Navigation from "./components/partial/navigation.component";
+import Paper from "@material-ui/core/Paper";
+import NewQuizForm from "./components/new-quiz.component";
 
-
-// const LinkBehavior = React.forwardRef((props, ref) => (
-//   <RouterLink ref={ref} to="/" {...props} />
-// ));
 
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    flexDirection: "horizontal",
-    justifyContent: "space-between"
-  },
-  menuRight: {
-  },
-
-  title: {
-    textTransform: "none"
+  container: {
+    marginTop: "1em",
+    display: "flex",
+    justifyContent: "center"
   },
 }));
 
@@ -46,80 +41,69 @@ function App (props)  {
 
 
   const classes = useStyles();
-  const [currentUser, setCurrentUser] = useState(undefined);
+
+  const [user, setUser] = useState(undefined);
+  const [message, setMessage] = useState("");
 
 
 
   let history = useHistory();
 
-  const logOut = () => {
-    AuthService.logout()
-    setCurrentUser(undefined)
-
+  const login = (user) => {
+    setUser(user);
   }
 
+  const logout = () => {
+    setUser(null);
+    AuthService.logout();
+  }
+
+
   useEffect(() => {
-    const user = AuthService.getCurrentUser();
-    if (user) {
-      setCurrentUser(user);
+    async function getProfile(){
+      const userLocal = UserService.getCurrentUserLocal();
+      if (userLocal) {
+        let res = await UserService.getCurrentUserServer()
+        const ok = res.ok
+        res = await res.json()
+        if (ok && res.id === userLocal.id) {
+          setUser(userLocal);
+        } else {
+          setUser(null)
+          console.log(res)
+          if (res.message) setMessage(res.message)
+        }
+
+      } else {
+        setUser(null);
+      }
     }
+    getProfile();
   }, [])
 
 
 
   return (
-    <Router>
-      <div>
-        <AppBar position="static">
-          <Toolbar className={classes.root}>
-            <div>
-              <Button color="inherit" className={classes.title} component={RouterLink} to="/">
-                <Typography variant="h6">Quiz Manager</Typography>
-              </Button>
-              <Button color="inherit" component={RouterLink} to="/">
-                Wszystkie quizy
-              </Button>
-              {currentUser && <Button color="inherit" component={RouterLink} to="/user">
-                Moje quizy
-              </Button>}
-            </div>
-            <div>
-              {currentUser ?
-                <>
-                  <Button color="inherit" component={RouterLink} to="/profile" endIcon={<AccountCircle />}>
-                    {currentUser.username}
-                  </Button>
-                  <Button style={{marginLeft:"20px"}} color="inherit" className={classes.menuRight} onClick={logOut}>
-                    Wyloguj się
-                  </Button>
-                </>
-                :
-                <>
-                  <Button color="inherit" className={classes.menuRight} component={RouterLink} to="/login">
-                    Zaloguj się
-                  </Button>
-                  <Button color="inherit" className={classes.menuRight} component={RouterLink} to="/register">
-                    Zarejestruj się
-                  </Button>
-                </>
-              }
-            </div>
-          </Toolbar>
-        </AppBar>
-        <Container >
-          <Switch>
-            <Route exact path={["/", "/home"]} component={Home} />
-            <Route exact path="/login" component={Login} />
-            <Route exact path="/register" component={Register} />
-            <Route exact path="/profile"> {currentUser === null ? <Redirect to="/"/> : <Profile/> } </Route>
-            <Route exact path="/quiz">  <QuizInfo/>  </Route>
-            <Route path="/quizAttempt" component={QuizAttempt} />
-            <Route path="/user"> {currentUser === null ? <Redirect to="/"/> : <BoardUser/> } </Route>
-            {/*<Route path="/admin" component={BoardAdmin} />*/}
-          </Switch>
-        </Container>
-      </div>
-    </Router>
+    <AuthContext.Provider value={{user: user, login: login, logout:logout}}>
+      <Router>
+        <div>
+          <Navigation/>
+          <Container className={classes.container}>
+            {message && <div>{message}</div>}
+            <Switch>
+              <Route exact path="/"> {user === null ? <Home/> : <BoardUser/> } </Route>
+              <Route exact path="/login" component={Login} />
+              <Route exact path="/register" component={Register} />
+              <Route exact path="/profile"> {user === null ? <Redirect to="/"/> : <Profile/> } </Route>
+              <Route exact path="/quiz/:id" component={QuizInfo}  />
+              <Route exact path="/new" component={NewQuizForm} />
+              <Route path="/quiz/solve/:id" component={QuizAttempt} />
+              {/*<Route path="/admin" component={BoardAdmin} />*/}
+            </Switch>
+          </Container>
+        </div>
+      </Router>
+    </AuthContext.Provider>
   );
 }
 

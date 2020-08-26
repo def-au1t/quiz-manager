@@ -29,10 +29,9 @@ module.exports = function(app) {
     controller.signUpRoles
   );
 
-  app.post("/api/auth/signIn", controller.signin);
+  app.post("/api/auth/signin", controller.signin);
 
-  app.get(
-    "/api/auth/self",
-    controller.selfProfile
-  );
+
+
+
 };

@@ -1,48 +1,22 @@
-import React, { Component } from "react";
-import AuthService from "../services/auth.service";
+import React, {Component, useContext, useEffect, useState} from "react";
+import Paper from "@material-ui/core/Paper";
+import {AuthContext} from "../context/AuthContext";
 
-export default class Profile extends Component {
-  constructor(props) {
-    super(props);
 
-    this.state = {
-      currentUser: AuthService.getCurrentUser()
-    };
-  }
+export default function Profile (props) {
 
-  render() {
-    const { currentUser } = this.state;
+  const currentUser = useContext(AuthContext);
 
-    return (
-      <div className="container">
-        <header className="jumbotron">
-          <h3>
-            <strong>{currentUser.username}</strong> Profile
-          </h3>
-        </header>
-        <p>
-          {currentUser.accessToken &&
-          (<>
-          <strong>Token:</strong>{" "}
-          {currentUser.accessToken.substring(0, 20)} ...{" "}
-          {currentUser.accessToken.substr(currentUser.accessToken.length - 20)}
-          </>)
-          }
-        </p>
-        <p>
-          <strong>Id:</strong>{" "}
-          {currentUser.id}
-        </p>
-        <p>
-          <strong>Email:</strong>{" "}
-          {currentUser.email}
-        </p>
-        <strong>Authorities:</strong>
-        <ul>
-          {currentUser.roles &&
-          currentUser.roles.map((role, index) => <li key={index}>{role}</li>)}
-        </ul>
-      </div>
+  return (
+      <>
+      <Paper>
+        <h1> Informacje o użytkowniku</h1>
+        {currentUser && currentUser.user &&
+        <><h3>Nazwa użytkownika: {currentUser.user.username} </h3>
+        <h3>Email: {currentUser.user.email} </h3>
+        <h3>Hasło: {currentUser.user.password} </h3></>
+        }
+      </Paper>
+        </>
     );
-  }
 }
