@@ -1,16 +1,30 @@
-import React, {Component, useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 
-import UserService from "../services/user.service";
 import QuizService from "../services/quiz.service";
-import QuizElement from "./quiz-list/quiz-list-element.component";
-import {Link} from "react-router-dom";
+import QuizElement from "./partial/quiz-list-element.component";
+import PageContainer from "./utils/page-container.component";
+import List from "@material-ui/core/List";
+import {globalStyles} from "../App"
+import {makeStyles} from "@material-ui/core/styles";
+import {Link as RouterLink} from "react-router-dom";
+import Button from "@material-ui/core/Button";
+import Box from "@material-ui/core/Box";
 
-export default function BoardUser () {
+const useStyles = makeStyles((theme) => ({
+  quizList: {
+    maxWidth: '400px'
+  }
+}));
+
+
+export default function QuizList () {
 
   const [quizList, setQuizList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const global = globalStyles()
+  const classes = useStyles()
 
   const getUserQuizList = () => {
     QuizService.getQuizList()
@@ -19,7 +33,6 @@ export default function BoardUser () {
         result => {
           setQuizList(result);
           setLoading(false);
-          console.log(result)
         },
         err => {
           setError(err);
@@ -27,14 +40,34 @@ export default function BoardUser () {
         }
   )}
 
+  const deleteQuiz = (id) => {
+    QuizService.deleteQuiz(id)
+      .then(res => res.json())
+      .then(
+        result => {
+          setLoading(true);
+          getUserQuizList()
+        },
+        err => {
+          setError(err);
+        }
+      )}
+
   useEffect(getUserQuizList, [])
 
 
     return (
-      <div>
-        {(loading) ? "Ładowanie" :
-      Array.from(quizList).map(quiz => <QuizElement quiz={quiz}/>)}
-        <Link to={'/new'}><button>Dodaj nowy quiz</button></Link>
-      </div>
+      <PageContainer title="Moje quizy" loading={loading}>
+        <List className={global.list+' '+classes.quizList}>
+        {quizList &&
+        Array.from(quizList)
+          .sort((a, b) =>  a.name.localeCompare(b.name) )
+          .map(quiz =>
+            <QuizElement key={quiz.id} del={deleteQuiz} quiz={quiz}/>)}
+        </List>
+        <Box my={2}>
+        <Button variant="contained" color="primary" component={RouterLink} to={'/new'}> Utwórz nowy quiz</Button>
+        </Box>
+      </PageContainer>
     );
 }

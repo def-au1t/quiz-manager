@@ -1,20 +1,11 @@
 const db = require("../models");
 const bcrypt = require("bcryptjs");
 
-User = db.user
+const User = db.user
+const Quiz = db.quiz
+const QuizAttempt = db.quizAttempt
 
 
-exports.allAccess = (req, res) => {
-    res.status(200).send("Public Content.");
-  };
-  
-  exports.userBoard = (req, res) => {
-    res.status(200).send("User Content.");
-  };
-  
-  exports.adminBoard = (req, res) => {
-    res.status(200).send("Admin Content.");
-  };
 
 exports.selfProfile = (req, res) => {
   const userId = req.userId;
@@ -42,6 +33,24 @@ exports.selfProfile = (req, res) => {
         roles: authorities
       });
     });
+}
+
+exports.selfProfileDelete = async (req, res) => {
+  const userId = req.userId;
+  if (!userId) return res.status(403).send({message: "Log in again!"});
+
+  try {
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res.status(500).send({message: "Internal server error: user.controller.selfProfileDelete"});
+    }
+    await QuizAttempt.deleteMany({user: user._id});
+    await Quiz.deleteMany({author: user._id});
+    return res.status(200).send({message: "User deleted successfully"});
+  }
+  catch(err){
+    return res.status(500).send({message: err});
+  }
 }
 
 // TODO: Finish and test function

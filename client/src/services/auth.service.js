@@ -1,35 +1,43 @@
-import axios from "axios";
-
 const API_URL = "/api/auth/";
 
 class AuthService {
-    login(username, password) {
-        return axios
-            .post(API_URL + "signin", {
-                username,
-                password
-            })
-            .then(response => {
-                console.log(response.data);
-                if (response.data.accessToken) {
-                    localStorage.setItem("user", JSON.stringify(response.data));
-                }
+  async login(username, password) {
+    let res = await fetch(API_URL + "signin",
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username,
+          password
+        })})
 
-                return response.data;
-            });
+    const ok = res.ok;
+    res = await res.json();
+    if (res.accessToken) {
+      localStorage.setItem("user", JSON.stringify(res));
     }
+    return {ok, ...res};
+  }
 
-    logout() {
-        localStorage.removeItem("user");
-    }
+  logout() {
+    localStorage.removeItem("user");
+  }
 
-    register(username, email, password) {
-        return axios.post(API_URL + "signup", {
-            username,
-            email,
-            password
-        });
-    }
+  async register(username, email, password) {
+    return fetch(API_URL + "signup", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username,
+        email,
+        password
+      })
+    });
+  }
 
 
 }

@@ -1,55 +1,45 @@
-import axios from 'axios';
 import authHeader from './auth-header';
 
 const API_URL = '/api/user/';
 
 class UserService {
-    // getPublicContent() {
-    //     return axios.get(API_URL + 'all');
-    // }
-    //
     getUserBoard() {
-        return axios.get(API_URL + '../test/user', { headers: authHeader() });
+        return fetch(API_URL + '../test/user', { headers: authHeader() });
     }
 
-    // getAdminBoard() {
-    //     return axios.get(API_URL + 'admin', { headers: authHeader() });
-    // }
-    //
     updateUserData(email, password) {
+      let body = {};
       if(!password){
-        return axios
-          .post(API_URL, {
-              email
-          }, { headers: authHeader() })
-          .then(response => {
-              return response.data;
-          })
-          .catch((err) => err);}
+        body = {email};
+      }
       else {
-        return axios
-        .post(API_URL, {
-          email,
-          password
-        })
+        body = {email, password};
+      }
+      return fetch(API_URL,  { method: "POST",headers: authHeader(), body: JSON.stringify(body) })
         .then(response => {
-          return response.data;
+          return response;
         })
-        .catch((err) => err);}
+        .catch((err) => err);
     }
 
   getCurrentUserLocal() {
-    // console.log(JSON.parse(localStorage.getItem('user')));
     return JSON.parse(localStorage.getItem('user'));
   }
 
   getCurrentUserServer() {
-    // console.log(JSON.parse(localStorage.getItem('user')));
     return fetch(API_URL, {
       method: "GET",
       headers: authHeader(),
     })
   }
+
+  deleteAccount() {
+    return fetch(API_URL, {
+      method: "DELETE",
+      headers: authHeader(),
+    })
+  }
+
 }
 
 export default new UserService();

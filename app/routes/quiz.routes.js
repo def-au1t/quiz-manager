@@ -35,8 +35,7 @@ module.exports = function(app) {
   app.delete(
     "/api/quiz/:id",
     [
-      authJwt.verifyToken, 
-      authJwt.isAdmin
+      authJwt.verifyToken
     ],
     controller.removeQuiz
   );

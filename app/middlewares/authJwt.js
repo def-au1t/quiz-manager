@@ -44,8 +44,7 @@ isAdmin = (req, res, next) => {
           }
         }
 
-        res.status(403).send({ message: "Require Admin Role!" });
-        return;
+        return res.status(403).send({ message: "Require Admin Role!" });
       }
     );
   });

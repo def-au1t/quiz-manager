@@ -7,8 +7,8 @@ dotenv.config();
 
 const app = express();
 
-var corsOptions = {
-  origin: "http://localhost:3000"
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN
 };
 
 app.use(cors(corsOptions));
@@ -19,17 +19,13 @@ app.use(bodyParser.json());
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// simple route
-app.get("/", (req, res) => {
-  res.json({ message: "Welcome to quiz app!" });
-});
 
 require('./app/routes/auth.routes')(app);
 require('./app/routes/user.routes')(app);
 require('./app/routes/quiz.routes')(app);
 
 // set port, listen for requests
-const PORT = process.env.PORT || 9500;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
@@ -44,11 +40,11 @@ db.mongoose
     useUnifiedTopology: true
   })
   .then(() => {
-    console.log("Successfully connect to MongoDB.");
+    console.log("Successfully connected to MongoDB.");
     initial();
   })
   .catch(err => {
-    console.error("Connection error", err);
+    console.error("DB connection error", err);
     process.exit();
   });
 

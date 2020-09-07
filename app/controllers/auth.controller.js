@@ -37,7 +37,7 @@ exports.signUp = (req, res) => {
   });
 };
 
-exports.signUpRoles = (req, res) => {
+exports.signUpWithRoles = (req, res) => {
     const user = new User({
       username: req.body.username,
       email: req.body.email,
@@ -95,7 +95,7 @@ exports.signUpRoles = (req, res) => {
 
 
 
-exports.signin = (req, res) => {
+exports.signIn = (req, res) => {
   User.findOne({
     username: req.body.username
   })

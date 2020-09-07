@@ -8,7 +8,6 @@ import AppBar from "@material-ui/core/AppBar";
 import React, {useContext} from "react";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 
-import AuthService from "../../services/auth.service";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -44,7 +43,7 @@ export default function Navigation (props) {
               <Button color="inherit" component={RouterLink} to="/profile" endIcon={<AccountCircle />}>
                 {user.username}
               </Button>
-              <Button style={{marginLeft:"20px"}} color="inherit" className={classes.menuRight} onClick={logout}>
+              <Button style={{marginLeft:"20px"}} color="inherit" onClick={logout}>
                 Wyloguj się
               </Button>
             </>

@@ -76,7 +76,7 @@ exports.listQuiz = (req, res) => {
 
 exports.getQuiz = (req, res) => {
   // req.params.id - id of quiz
-  Quiz.findById(req.params.id).exec((err, quiz) => {
+  Quiz.findById(req.params.id, (err, quiz) => {
     if(err){
       res.status(500).send({ message: err });
       return;
@@ -87,26 +87,44 @@ exports.getQuiz = (req, res) => {
     }
     let quiz_res = quiz.toObject()
     for (let question of quiz_res.questions){
-      question.answers = question.answers.map((answer) => answer.text)
+      question.answers = question.answers.map((answer) => {return {'text': answer.text, '_id': answer._id}})
     }
     res.send(quiz_res);
   })
 };
 
 exports.removeQuiz = (req, res) => {
-  // req.params.id - id of quiz
-  Quiz.findByIdAndDelete(req.params.id).exec((err, quiz) => {
+
+  Quiz.findById(req.params.id).exec((err, quiz) => {
     if(err){
       res.status(500).send({ message: err });
       return;
     }
-    if (!quiz){
-      res.status(404).send({message: "quiz with given id was not found"});
+
+    if(quiz.author._id.toHexString() !== req.userId.toString()){
+      res.status(403).send({ message: "Unauthenticated action for user"});
       return;
     }
-    for (let question of quiz.questions) {
-      res.send({message: "quiz with given id was removed"});
-    }
+  // req.params.id - id of quiz
+    Quiz.findByIdAndDelete(req.params.id).exec((err, quiz) => {
+      if(err){
+        res.status(500).send({ message: err });
+        return;
+      }
+      if (!quiz){
+        res.status(404).send({message: "quiz with given id was not found"});
+        return;
+      }
+      QuizAttempt.deleteMany({quiz: quiz._id}).exec((err, attempts) =>
+      {
+        if (err) {
+          res.status(500).send({message: err});
+          return;
+        }
+        res.send({message: "quiz with given id was removed"});
+      })
+    })
+
   })
 };
 
@@ -154,7 +172,7 @@ exports.checkAnswer = (req, res) => {
       return;
     }
     if (!Array.isArray(answers)) {
-      res.status(404).send({message: "question with given id was not found"});
+      res.status(400).send({message: "question with given id was not found"});
       return;
     }
     if (answers.length !== givenAnswers.length) {
@@ -162,16 +180,27 @@ exports.checkAnswer = (req, res) => {
       return;
     }
     const correctAnswers = answers.map((answer) => {
-      return answer.isTrue;
+      return {'_id':answer.id, 'answer': answer.isTrue};
     })
     let result = [];
     const allCount = correctAnswers.length;
     let correctCount = 0;
-    for (let i = 0; i < correctAnswers.length; i++) {
-      if (givenAnswers[i] === correctAnswers[i]) {
-        result.push(true);
+
+    let answersIds = new Set();
+    for(let a of givenAnswers){
+      if(answersIds.has(a._id)){
+        return res.status(400).send({message: "repeating answers"});
+      }
+      answersIds.add(a._id);
+    }
+
+    for (let givenA of givenAnswers) {
+      const correctItem = correctAnswers.find((el) => el._id === givenA._id)
+      if(!correctItem) return res.status(400).send({message: "answer with given id was not found"});
+      if (correctItem.answer === givenA.answer) {
         correctCount++;
-      } else result.push(false);
+      }
+      result.push({'_id': correctItem._id, 'result': Boolean(correctItem.answer === givenA.answer)});
     }
 
     let givenPoints;
@@ -191,7 +220,7 @@ exports.checkAnswer = (req, res) => {
         return;
       }
 
-      if(quizAttempt.user != req.userId){
+      if(quizAttempt.user._id.toHexString() !== req.userId){
         res.status(403).send({message: "Quiz has been started by another user"});
         return;
       }
@@ -201,12 +230,12 @@ exports.checkAnswer = (req, res) => {
         return;
       }
 
-      for(let answer of quizAttempt.answers){
-        if(answer.question == req.params.qid){
-          res.status(403).send({message: "Answer for this question has already been sent"});
-          return;
-        }
-      }
+      // for(let answer of quizAttempt.answers){
+      //   if(answer.question == req.params.qid){
+      //     res.status(403).send({message: "Answer for this question has already been sent"});
+      //     return;
+      //   }
+      // }
 
 
       quizAttempt.answers.push({
@@ -286,7 +315,7 @@ exports.finishQuizAttempt = (req, res) => {
       return;
     }
 
-    if(quizAttempt.user != req.userId){
+    if(quizAttempt.user._id.toHexString() !== req.userId){
       res.status(403).send({message: "Quiz has been started by another user"});
       return;
     }
@@ -318,7 +347,7 @@ exports.getQuizAttempt = (req, res) => {
       res.status(404).send({message: "Quiz attempt with given id was not found"});
       return;
     }
-    if (quizAttempt.user != req.userId){
+    if (quizAttempt.user._id.toHexString() !== req.userId){
       res.status(403).send({message: "Quiz attempt has been started by another user"});
       return;
     }

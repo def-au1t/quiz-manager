@@ -24,7 +24,7 @@ export function convertPDSToJson(PDSText){
 
   for(let i=0; i< lines.length; i++){
     let currentLine = lines[i];
-    let previousLine = (i > 0) ? lines[i-1] : "";
+    // let previousLine = (i > 0) ? lines[i-1] : "";
 
 
     previousType = (i > 0) ? currentType : "blank";
@@ -43,7 +43,7 @@ export function convertPDSToJson(PDSText){
       }
       case "question": {
         if(previousType === "question" && ignore === false){
-          newQuestion.text += currentLine;
+          newQuestion.text += '\n'+currentLine;
           ignore = false;
         }
         else if(previousType === "blank"){

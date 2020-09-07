@@ -1,4 +1,4 @@
-import React, {Component, useContext, useEffect, useRef, useState} from "react";
+import React, {useContext, useState} from "react";
 import AuthService from "../services/auth.service";
 import {AuthContext} from "../context/AuthContext";
 import Card from "@material-ui/core/Card";
@@ -13,8 +13,10 @@ import { makeStyles } from '@material-ui/core/styles';
 
 
 
-const useStyles = makeStyles((theme) => ({
+export const useStyles = makeStyles((theme) => ({
   root: {
+    margin: "auto",
+    marginTop: "2em",
     maxWidth: 500
   },
   paper: {
@@ -42,34 +44,30 @@ export default function Login (props) {
   const classes = useStyles();
   const authContext = useContext(AuthContext);
 
-  const loginHandler = () => {
+  const loginHandler = async () => {
 
     setMessage("");
     if(!username || !password){
       setMessage("Wypełnij wszystkie pola!");
       return;
     }
-
-    AuthService.login(username, password).then(
-      (user) => {
-        authContext.login(user)
+    try {
+      let res = await AuthService.login(username, password)
+      if(res.ok){
+        authContext.login(res)
         props.history.push("/profile");
-        // window.location.reload();
-      },
-      error => {
-        let resMessage =
-          (error.response &&
-            error.response.data &&
-            error.response.data.message) ||
-          error.message ||
-          error.toString();
-        switch (resMessage) {
-          case "User Not found!": resMessage="Nie znaleziono użytkownika!"; break;
-          case "Invalid Password!": resMessage="Niepoprawne hasło!"; break;
-        }
-        setMessage(resMessage);
+        return;
       }
-    );
+      let resMessage = "";
+      switch (res.message) {
+        case "User Not found.": resMessage="Nie znaleziono użytkownika!"; break;
+        case "Invalid Password!": resMessage="Niepoprawne hasło!"; break;
+      }
+      setMessage(resMessage);
+    }
+    catch(err){
+      setMessage(err.message);
+    }
   };
 
   const [message, setMessage] = useState("");

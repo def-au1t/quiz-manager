@@ -1,4 +1,3 @@
-import axios from 'axios';
 import authHeader from './auth-header';
 
 const API_URL = '/api/quiz/';
@@ -10,6 +9,13 @@ class QuizService {
 
   getQuizData(id) {
     return fetch(API_URL + id.toString(), {
+      headers: authHeader()
+    });
+  }
+
+  deleteQuiz(id) {
+    return fetch(API_URL + id.toString(), {
+      method: "DELETE",
       headers: authHeader()
     });
   }
@@ -67,6 +73,17 @@ class QuizService {
         ...authHeader()
       }
     })
+  }
+
+  getSettings() {
+    return JSON.parse(localStorage.getItem('attemptSetting'));
+  }
+
+  setSettings(settings){
+    if(!settings) {
+      localStorage.removeItem("attemptSetting");
+    }
+    localStorage.setItem("attemptSetting", JSON.stringify(settings));
   }
 }
 
