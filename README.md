@@ -46,4 +46,4 @@ It is required to set the following environment variables:
 
 ## Author
 
-[Jacek Nitychoruk](https://github.com/Jck-eN)
+[Jacek Nitychoruk](https://github.com/def-au1t)
