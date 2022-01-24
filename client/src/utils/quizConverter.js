@@ -5,7 +5,7 @@ const getLineType = (line) => {
   else return "question";
 }
 
-const getAnswerText = (answer) => answer.split(')')[1].trim()
+const getAnswerText = (answer) => answer.split("/\)(.+)/")[1].trim();
 
 export function convertPDSToJson(PDSText){
   const lines = PDSText.split('\n');
